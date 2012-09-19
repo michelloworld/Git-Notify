@@ -1,0 +1,33 @@
+{
+  "name": "Social Coding Notification",
+  "version": "1.0",
+  "manifest_version": 2,
+  "description": "Notify the events on your social coding accounts.",
+  "browser_action": {
+    "default_icon": "images/bitbucket-icon19.png",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "page": "background.html"
+  },
+  "permissions": [
+    "https://*.github.com/",
+    "https://*.bitbucket.org/",
+    "https://*.google.com/",
+    "http://*.google.com/",
+    "storage",
+    "notifications",
+    "tabs"
+  ],
+  "web_accessible_resources": [
+    "images/bitbucket-icon19.png",
+    "images/bitbucket-icon48.png",
+    "images/github-icon-19.png",
+    "images/github-icon-48.png",
+    "images/loading.gif"
+  ],
+  "icons": {
+    "48": "images/bitbucket-icon48.png",
+    "128": "images/bitbucket-icon128.png"
+  }
+}
