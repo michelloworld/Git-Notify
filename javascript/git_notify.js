@@ -1,9 +1,8 @@
 
 GitNotify = {
-	bitbucketFeedUrl : "http://localhost/social_coding/feed.xml",
-	// bitbucketFeedUrl : "https://bitbucket.org/firecreekmic/rss/feed?token=35e0869ce04dcc4dde65657d327a0e14",
-	notificationTime : 3000,
-	intervalTime : 6000,
+	bitbucketFeedUrl    : "",
+	notificationTime    : 3000,
+	intervalTime        : 12000,
 	githubIcon19        : "images/github-icon-19.png",
 	githubIcon48        : "images/github-icon-48.png",
 	bitbucketIcon19     : "images/bitbucket-icon19.png",
@@ -17,11 +16,6 @@ GitNotify = {
 	checkFeed : function() {
 		var self = this;
 
-		// stop function if there is no bitbucketFeedUrl
-		if(this.bitbucketFeedUrl == null || this.bitbucketFeedUrl == "") {
-			return;
-		}
-
 		var resetPubDate = false;
 		// check bitbucketFeedUrl from localStorage
 		if(localStorage.getItem("bitbucketFeedUrl") != null) {
@@ -29,19 +23,26 @@ GitNotify = {
 			resetPubDate = true;
 		}
 
+		// stop function if there is no bitbucketFeedUrl
+		if(this.bitbucketFeedUrl == null || this.bitbucketFeedUrl == "") {
+			return;
+		}
+
 		console.log("loading...");
 		$.get(this.bitbucketFeedUrl, function(feed) {
 			var jsonFeed = $.xml2json(feed);
 
+			var itemSelected = self.checkItemSelected(jsonFeed);
+
 			if(resetPubDate) {
-				if(jsonFeed.channel.item[0].pubDate != localStorage.getItem("lastPubDate")) {
+				if(itemSelected.pubDate != localStorage.getItem("lastPubDate")) {
 					localStorage.removeItem("lastPubDate");
 				}
 			}
 
 			// check recent feed data
-			if(jsonFeed.channel.item[0].pubDate > localStorage.getItem("lastPubDate") || localStorage.getItem("lastPubDate") == null) {
-				localStorage.setItem("lastPubDate", jsonFeed.channel.item[0].pubDate);
+			if(itemSelected.pubDate > localStorage.getItem("lastPubDate") || localStorage.getItem("lastPubDate") == null) {
+				localStorage.setItem("lastPubDate", itemSelected.pubDate);
 				localStorage.setItem("jsonFeed", JSON.stringify(jsonFeed));
 
 				// show notify
@@ -50,6 +51,7 @@ GitNotify = {
 				// show Feed data at popup page
 				self.showFeed();
 			}
+
 		});
 	},
 
@@ -68,7 +70,8 @@ GitNotify = {
 
 		// render html feed
 		var item = jsonFeed.channel.item;
-		for(var i = 0; i < 10; i++) {
+
+		for(var i = 0; (i < item.length && i <= 9); i++) {
 			$("#content ul").append("<li><a href=\""+item[i].link+"\">"+item[i].title+"<div>"+item[i].pubDate+"</div>"+"</a></li>");
 		}
 
@@ -87,25 +90,15 @@ GitNotify = {
 	},
 
 	notify : function(jsonFeed) {
-		// var titleRegex = /(.*) (committed) .* to (.*)/;
-		// [1] = username
-		// [2] = event (committed)
-		// [3] = project
-		// var title = titleRegex.exec(jsonFeed.channel.item[0].title);
-		var title = jsonFeed.channel.item[0].title;
+		var itemSelected = this.checkItemSelected(jsonFeed);
 
-		var link = jsonFeed.channel.item[0].link;
-
-		var commitMsg = jsonFeed.channel.item[3].description.p;
+		var title = itemSelected.title;
 		
-		var pubDate = jsonFeed.channel.item[0].pubDate;
+		var pubDate = itemSelected.pubDate;
 
 		var notification = webkitNotifications.createNotification(
 		  this.bitbucketIcon48,
-		  // notification title
-		  // title[1]+' '+title[2]+' to '+title[3],
 		  title,
-		  // notification body text
 		  pubDate
 		);
 
@@ -114,6 +107,16 @@ GitNotify = {
 
 		// close notification every ... sec
 		setTimeout(function(){ notification.close(); }, this.notificationTime);
+	},
+
+	checkItemSelected : function(jsonFeed) {
+		// fix if there is one committed in feed
+		var itemSelected = jsonFeed.channel.item;
+		if(jsonFeed.channel.item.length > 1) {
+			itemSelected = jsonFeed.channel.item[0];
+		}
+
+		return itemSelected;
 	}
 
 }
